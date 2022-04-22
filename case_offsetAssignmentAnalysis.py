@@ -226,6 +226,9 @@ for algorithm in list_algorithms:
 for result in list_results:
     maxDelays = getMaxDelaysFromSim(case_taskSet, [ O_i for O_i in result['offsets'] ] )
     result['maxDelays'] = tuple( maxDelays )
+    result['schedulable'] = True
+    for i, delay in enumerate(result['maxDelays']):
+        if case_taskSet[i]['period'] - case_taskSet[i]['execTime'] < delay: result['schedulable'] = False
 
 
 # Write brute results in txt file
@@ -236,7 +239,9 @@ with open(outputFolderRoot + '/results.txt', "w") as file:
     for result in list_results:
         file.write( f'{result["name"]}: ({result["calcTime"]:.2e})\n\n' )
         file.write( f'Offsets: {result["offsets"]}\n')
-        file.write( f'Maximum delays: {result["maxDelays"]}\n\n')
+        file.write( f'Maximum delays: {result["maxDelays"]}\n')
+        if result['schedulable']: file.write( f'Schedulable.\n\n')
+        else: file.write( f'Not schedulable.\n\n')
 
 
 functionNameList = tuple([result['name'] for result in list_results])
@@ -249,14 +254,15 @@ maxDelaysPerExecTime = tuple( [ tuple( [
     result['maxDelays'][i] / nlargest(2, c)[1 if (i == c.index(max(c)) ) else 0]
     for i in range(len(case_taskSet)) ] ) for result in list_results ] )
 
-maxDelaysOverDeadline = tuple( [ tuple( [
-    (result['maxDelays'][i] - (case_taskSet[i]['period'] - case_taskSet[i]['execTime'])) if (result['maxDelays'][i] - (case_taskSet[i]['period'] - case_taskSet[i]['execTime']) > 0) else 0
+maxRespTimeOverC = tuple( [ tuple( [
+    (result['maxDelays'][i] + case_taskSet[i]['execTime'])/case_taskSet[i]['execTime']
     for i in range(len(case_taskSet)) ] ) for result in list_results ] )
 
 # Plot in boxplot
 # plotFileName = f'{outputFolder}/plot_{numberSets}x{numberTasks}t'
 plotFileName = f'{outputFolderRoot}/plot'
 
-printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxDelaysOverDeadline, plotFileName)
+printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxRespTimeOverC, plotFileName)
+printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxRespTimeOverC, plotFileName+"_outliers", showOutliers=True)
 
 print(f'Done.\nResults in TXT, CSV, PNG and PDF files with name root = {plotFileName}')
