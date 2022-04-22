@@ -69,10 +69,10 @@ def optimizeORToolsCPSAT(taskSet, maxOverlap = False, timeLimit_Sec = None, verb
     model = cp_model.CpModel()
 
     offsets = [model.NewIntVar(0, offsetLimits[i]-1, f'O_{i}') for i in range(n)]
-    k = [[ model.NewIntVar(-max(periods[i], periods[j])//gcds[i][j], max(periods[i], periods[j])//gcds[i][j], 'k_{i}_{j}') for j in range(n) ]  for i in range(n) ]
+    k = [[ model.NewIntVar(-max(periods[i], periods[j])//gcds[i][j]+1, max(periods[i], periods[j])//gcds[i][j]+1, 'k_{i}_{j}') for j in range(n) ]  for i in range(n) ]
     m = [[ model.NewIntVar(0, (gcds[i][j] - c[i]) if (gcds[i][j] - c[i] > 0) else 0, 'm_{i}_{j}') for j in range(n) ]  for i in range(n) ]
 
-    weight = [[int(hyperperiod / periods[j]) if i != j else 0 for j in range(n)] for i in range(n)]
+    # weight = [[int(hyperperiod / periods[j]) if i != j else 0 for j in range(n)] for i in range(n)]
 
     for i in range(n):
         for j in range(n):
@@ -96,18 +96,18 @@ def optimizeORToolsCPSAT(taskSet, maxOverlap = False, timeLimit_Sec = None, verb
 
     for i in range(n):
         for j in range(n):
-            if i != j: model.Add( 0 == c[i] - (offsets[j] - offsets[i] + k[i][j] * gcds[i][j]) + m[i][j] )
+            if i != j: model.Add( periods[j] - c[j] >= c[i] - (offsets[j] - offsets[i] + k[i][j] * gcds[i][j]) + m[i][j] )
 
     solver = cp_model.CpSolver()
     if timeLimit_Sec != None: solver.parameters.max_time_in_seconds = timeLimit_Sec
     
     status = solver.Solve(model)
 
-    if status == cp_model.OPTIMAL: print('Status = OPTIMAL')
-    if status == cp_model.FEASIBLE: print('Status = FEASIBLE')
-    if status == cp_model.UNKNOWN: print('Status = UNKNOWN')
-    if status == cp_model.MODEL_INVALID: print('Status = MODEL_INVALID')
-    if status == cp_model.INFEASIBLE: print('Status = INFEASIBLE')
+    # if status == cp_model.OPTIMAL: print('Status = OPTIMAL')
+    # if status == cp_model.FEASIBLE: print('Status = FEASIBLE')
+    # if status == cp_model.UNKNOWN: print('Status = UNKNOWN')
+    # if status == cp_model.MODEL_INVALID: print('Status = MODEL_INVALID')
+    # if status == cp_model.INFEASIBLE: print('Status = INFEASIBLE')
 
     success = (status == cp_model.OPTIMAL or status == cp_model.FEASIBLE)
     if verbose:

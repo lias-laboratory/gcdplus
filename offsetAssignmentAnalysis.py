@@ -31,11 +31,11 @@ optim_z3_max = False                 # True | False -- Enable analysis of Optimi
 optim_z3_sum = False                 # True | False -- Enable analysis of Optimization (Sum Delays) Scheduling - Z3
 
 numberSets = 1000   # Number of sets to generate for the analysis
-numberTasks = 8    # Number of tasks to generate for each set
-U_target = 0.9      # Utilization factor
+numberTasks = 16    # Number of tasks to generate for each set
+U_target = 0.98      # Utilization factor, between 0 and 1
 verbose = False     # Print progress while doing analysis
 
-optimTimeLimit = 5  # seconds
+optimTimeLimit = None  # seconds
 
 
 # -----------------------------------------------------------
@@ -54,21 +54,15 @@ from generation.messageSetGeneration import generateTaskSetDRS, getMatrixFromFil
 from basicFunctions.simulation import getMaxDelaysFromSim
 from basicFunctions.boxplot import printBoxplot4
 
-if heur_new:                from scheduling.ladeira     import heuristicScheduling
-if heur_goossens:           from scheduling.goossens    import goossensScheduling
-if heur_goossensModified:   from scheduling.goossens    import goossensModifiedScheduling
-if heur_goossensCoupled:    from scheduling.goossens    import goossensCoupledScheduling
-if heur_can:                from scheduling.can         import CANScheduling
-if heur_paparazzi:          from scheduling.paparazzi   import paparazziScheduling
+from scheduling.ladeira import heuristicScheduling
+from scheduling.goossens import goossensCoupledScheduling, goossensScheduling, goossensModifiedScheduling
+from scheduling.can import CANScheduling
+from scheduling.paparazzi import paparazziScheduling
 
-if optim_cplex_max:         from optim.cplex            import optimizeCPLEX_Max
-if optim_cplex_sum:         from optim.cplex            import optimizeCPLEX_Sum
-if optim_ortools_cpsat_max: from optim.ORTools_CPSAT    import optimizeORToolsCPSAT_Max
-if optim_ortools_cpsat_sum: from optim.ORTools_CPSAT    import optimizeORToolsCPSAT_Sum
-if optim_ortools_mip_max:   from optim.ORTools_MIP      import optimizeORToolsMIP_Max 
-if optim_ortools_mip_sum:   from optim.ORTools_MIP      import optimizeORToolsMIP_Sum
-if optim_z3_max:            from optim.z3py             import optimizeZ3_Max
-if optim_z3_sum:            from optim.z3py             import optimizeZ3_Sum
+from optim.cplex import optimizeCPLEX_Max, optimizeCPLEX_Sum
+from optim.ORTools_CPSAT import optimizeORToolsCPSAT_Max, optimizeORToolsCPSAT_Sum
+from optim.ORTools_MIP import optimizeORToolsMIP_Max, optimizeORToolsMIP_Sum
+from optim.z3py import optimizeZ3_Max, optimizeZ3_Sum
 
 
 # -----------------------------------------------------------
@@ -175,7 +169,6 @@ if optim_ortools_mip_max :      list_algorithms.append( {'name': 'Optim Max Norm
 if optim_ortools_mip_sum :      list_algorithms.append( {'name': 'Optim Sum Norm Delay - OR-Tools MIP', 'function': optimizeORToolsMIP_Sum, 'optimization': True} )  
 if optim_z3_max :               list_algorithms.append( {'name': 'Optim Max Norm Delay - Z3', 'function': optimizeZ3_Max, 'optimization': True} )          
 if optim_z3_sum :               list_algorithms.append( {'name': 'Optim Sum Norm Delay - Z3', 'function': optimizeZ3_Sum, 'optimization': True} )    
-# if bruteForce :                 list_algorithms.append( {'name': ' Brute Force scheduling', 'function': bruteForceScheduling} )   
 
 list_algorithms = tuple( list_algorithms )
 
@@ -223,13 +216,11 @@ for taskSet in list_taskSets:
     if currentU > uMax: uMax = currentU
 print()
 
-# Write task sets in csv file
-
-if filterSets: markAsfiltered = '_filtered'
+if filterSets: markAsfiltered = '_f'
 else: markAsfiltered = ''
 
 today = datetime.now()
-outputFolder = outputFolderRoot + markAsfiltered + '_' + today.strftime("%y_%m_%d_%Hh%M")
+outputFolder = outputFolderRoot + markAsfiltered + f'_{numberSets}x{numberTasks}t_U{U_target*100:.0f}_' + today.strftime("%y%m%d_%H%M")
 
 taskSetsFileName = f'{outputFolder}/taskSets_{numberSets}x{numberTasks}t.csv'
 
@@ -243,19 +234,6 @@ with open(taskSetsFileName, "w") as file:
 
 # ---------------------------------------------------------------------------------------
 # Calculate offsets:
-
-# list_taskSets = []
-
-# with open(taskSetsFileName, "r") as file:
-#     reader = csv.reader(file, delimiter=';')
-#     header = next(reader)
-#     for line in reader:
-#         taskSet = []
-#         for literalTask in line:
-#             taskInfo = literal_eval(literalTask)
-#             newTask = {'period':taskInfo[0], 'execTime':taskInfo[1]}
-#             taskSet.append(newTask)
-#         list_taskSets1.append( tuple(taskSet) )
 
 list_results = []
 
@@ -291,7 +269,7 @@ for algorithm in list_algorithms:
         result['name'] = algorithm['name']
         result['taskSets'] = tuple( [ {'tasks': x} for x in list_taskSets] )
 
-        if algorithm.get('optimization'): output = evalOptimAlgo(algorithm['function'], list_taskSets, optimTimeLimit)
+        if algorithm.get('optimization'): output = evalOptimAlgo(algorithm['function'], list_taskSets, timeLimit=optimTimeLimit)
         else: output = evalSchedHeur(algorithm['function'], list_taskSets)
 
         for i, taskSet in enumerate(result['taskSets']):
@@ -303,39 +281,21 @@ for algorithm in list_algorithms:
         print(f"Time spent in {algorithm['name']} is: ", sum(output['calcTimes']))
 
 
-# Save outputs to independent files !!!
-
 # ---------------------------------------------------------------------------------------
 # Get maximum delays from simulation
 
-# !!! Import offsets ??
+print('Simulating...')
 
 for result in list_results:
+    notSchedulable = 0
     for i, taskSet in enumerate(result['taskSets']):
+        schedulable = True
         maxDelays = getMaxDelaysFromSim(taskSet['tasks'], [ task['offset'] for task in taskSet['tasks'] ] )
         for j, task in enumerate(taskSet['tasks']):
             task['maxDelay'] = maxDelays[j]
-
-
-# # Write brute results in txt file
-# with open(outputFile + '_results.txt', "w") as file:
-#     file.write('----------------- OUTPUT -----------------\n\n')
-#     for methodResults in list_simResults:
-#         file.write(methodResults['name'] + f': ({sum(methodResults["calcTimes"]):.2e} | {sum(methodResults["calcTimes"])/numberSets:.2e} )\n\n')
-#         for i in range(len(methodResults['calcTimes'])):
-#             file.write(f'Task set {i} (' + str(timedelta(seconds = methodResults['calcTimes'][i])) + '):\n')
-#             file.write('Periods: ( ')
-#             for task in list_taskSets[i]: file.write(f'{task["period"]}' + ' ')
-#             file.write(')\n')
-#             file.write('Execution times: ( ')
-#             for task in list_taskSets[i]: file.write(f'{task["execTime"]}' + ' ')
-#             file.write(')\n')
-#             file.write('Offsets: ( ')
-#             for o in methodResults['offsets'][i]: file.write(f'{o}' + ' ')
-#             file.write(')\n')
-#             file.write('Maximum delays: ( ')
-#             for delay in methodResults['maxDelays'][i]: file.write(f'{delay}' + ' ')
-#             file.write(')\n\n')
+            if task['maxDelay'] + task['execTime'] > task['period']: schedulable = False
+        if not schedulable: notSchedulable += 1
+    result['notSchedulable'] = notSchedulable
 
 
 functionNameList = tuple([result['name'] for result in list_results])
@@ -348,50 +308,22 @@ maxDelaysPerExecTime = tuple( [ tuple( [
     task['maxDelay']/nlargest(2, [ t['execTime'] for t in taskSet['tasks'] ])[1 if (task['execTime'] == max([ t['execTime'] for t in taskSet['tasks'] ])) else 0]
     for taskSet in result['taskSets'] for task in taskSet['tasks']] ) for result in list_results ] )
 
-maxDelaysOverDeadline = tuple( [ tuple( [
-    (task['maxDelay'] - (task['period'] - task['execTime'])) if (task['maxDelay'] - (task['period'] - task['execTime']) > 0) else 0
+maxRespTimeOverC = tuple( [ tuple( [
+    (task['maxDelay'] + task['execTime'])/task['execTime']
     for taskSet in result['taskSets'] for task in taskSet['tasks']] ) for result in list_results ] )
 
-
-# # Write results in csv file
-# with open(outputFile + '_results.csv', "w") as file:
-#     m = 0
-#     for methodResults in list_simResults:
-#         file.write(methodResults['name'] + f',{sum(methodResults["calcTimes"])},{sum(methodResults["calcTimes"])/numberSets}\n\n')
-#         for i in range(len(methodResults['calcTimes'])):
-#             file.write(f'Task set,{i},{methodResults["calcTimes"][i]}\n')
-#             file.write('Periods,')
-#             for task in list_taskSets[i]: file.write(f'{task["period"]}' + ',')
-#             file.write('\n')
-#             file.write('Execution times,')
-#             for task in list_taskSets[i]: file.write(f'{task["execTime"]}' + ',')
-#             file.write('\n')
-#             file.write('Offsets,')
-#             for o in methodResults['offsets'][i]: file.write(f'{o}' + ',')
-#             file.write('\n')
-#             file.write('Maximum delays,')
-#             for delay in methodResults['maxDelays'][i]: file.write(f'{delay}' + ',')
-#             file.write('\n')
-#             file.write('MaxD/T,')
-#             for delay in maxDelaysPerPeriod[m][i]: file.write(f'{delay}' + ',')
-#             file.write('\n')
-#             file.write('MaxD/c,')
-#             for delay in maxDelaysPerExecTime[m][i]: file.write(f'{delay}' + ',')
-#             file.write('\n')
-#             file.write('MaxD-T,')
-#             for delay in maxDelaysOverDeadline[m][i]: file.write(f'{delay}' + ',')
-#             file.write('\n\n')
-#         m += 1
 
 # Plot in boxplot
 plotFileName = f'{outputFolder}/plot_{numberSets}x{numberTasks}t'
 
-printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxDelaysOverDeadline, plotFileName)
+printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxRespTimeOverC, plotFileName, showOutliers=False)
+printBoxplot4(functionNameList, allMaxDelays, maxDelaysPerPeriod, maxDelaysPerExecTime, maxRespTimeOverC, plotFileName+"_outliers", showOutliers=True)
+
 
 # Write log in txt file
 with open(outputFolder + '/log.txt', "w+") as file:
     file.write(f'{numberSets} sets of {numberTasks} tasks. U = {U_target:.2f} ({uMin:.2f} - {uMax:.2f}).\n\n')
     for result in list_results:
-        file.write( f'Time spent in {result["name"]}: {sum([x["calcTime"] for x in result["taskSets"]]):.2e}\n' )
+        file.write( f'Time spent in {result["name"]}: {sum([x["calcTime"] for x in result["taskSets"]]):.2e} -- Not schedulable: {result["notSchedulable"]}\n' )
 
 print(f'Done.\nResults in TXT, CSV, PNG and PDF files with name root = {plotFileName}')

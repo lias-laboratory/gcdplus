@@ -9,12 +9,14 @@
 
 import matplotlib.pyplot as plt
 
-def printBoxplot4(functionNames, maxDelays, maxDelays_T, maxDelays_C, maxDelays_D, outputFileName):
+def printBoxplot4(functionNames, maxDelays, maxDelays_T, maxDelays_C, maxDelays_D, outputFileName, showOutliers = False):
     plt.figure(figsize=(16, 8))
+
+    outlierStyle = dict(marker = 'x', markersize = 2)
 
     plt.subplot(141)
     # plt.boxplot(relativeMean, showmeans=True,meanprops={"marker":"s"})
-    plt.boxplot(maxDelays, showmeans=True, meanline=True, showfliers=False)
+    plt.boxplot(maxDelays, showmeans=True, meanline=True, showfliers=showOutliers, flierprops=outlierStyle)
     # plt.ylim(0, 14)
     plt.gca().xaxis.set_ticklabels(functionNames)
     plt.xticks(rotation=45, ha='right')
@@ -25,7 +27,7 @@ def printBoxplot4(functionNames, maxDelays, maxDelays_T, maxDelays_C, maxDelays_
     plt.grid(axis='y', linestyle = '--', which='both', linewidth = 0.5)
     
     plt.subplot(142)
-    plt.boxplot(maxDelays_T, showmeans=True, meanline=True, showfliers=False)
+    plt.boxplot(maxDelays_T, showmeans=True, meanline=True, showfliers=showOutliers, flierprops=outlierStyle)
     # plt.ylim(0, 14)
     plt.gca().xaxis.set_ticklabels(functionNames)
     plt.xticks(rotation=45, ha='right')
@@ -37,7 +39,7 @@ def printBoxplot4(functionNames, maxDelays, maxDelays_T, maxDelays_C, maxDelays_
 
     
     plt.subplot(143)
-    plt.boxplot(maxDelays_C, showmeans=True, meanline=True, showfliers=False)
+    plt.boxplot(maxDelays_C, showmeans=True, meanline=True, showfliers=showOutliers, flierprops=outlierStyle)
     # plt.ylim(0, 14)
     plt.gca().xaxis.set_ticklabels(functionNames)
     plt.xticks(rotation=45, ha='right')
@@ -48,11 +50,11 @@ def printBoxplot4(functionNames, maxDelays, maxDelays_T, maxDelays_C, maxDelays_
     plt.grid(axis='y', linestyle = '--', which='both', linewidth = 0.5)
 
     plt.subplot(144)
-    plt.boxplot(maxDelays_D, showmeans=True, meanline=True, showfliers=False)
+    plt.boxplot(maxDelays_D, showmeans=True, meanline=True, showfliers=showOutliers, flierprops=outlierStyle)
     # plt.ylim(0, 14)
     plt.gca().xaxis.set_ticklabels(functionNames)
     plt.xticks(rotation=45, ha='right')
-    plt.title('Max Deadline Miss')
+    plt.title('MaxRespTime/ExecTime')
     plt.minorticks_on()
     plt.tick_params(axis='x', which='minor', bottom=False)
     plt.grid(axis='x', linestyle = '--', which='major', linewidth = 0.5)

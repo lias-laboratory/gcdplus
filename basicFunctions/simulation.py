@@ -51,20 +51,26 @@ def getMaxDelaysFromSim(taskSet, offsets):
     maxDelays = [0] * n
 
     calls = list(offsets)
-    t = 0
 
+    # Start at the first call
+    t = min(calls)
     while t < maxTime :
+        # FIFO: check next task to be executed
         earliestCall = min(calls)
         i = calls.index(earliestCall)
         executingTask = taskSet[i]
+        # Chech if there is any delay. If so, register.
         if earliestCall < t :
             delayTime = t - earliestCall
             maxDelays[i] = max(maxDelays[i], delayTime)
+        # Else: forward to earliest call
         else:
             t = earliestCall
 
+        # Execute task
         t += executingTask['execTime']
 
+        # Update calls
         calls[i] += executingTask['period']
 
     return tuple(maxDelays)
