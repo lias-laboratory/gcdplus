@@ -15,6 +15,13 @@
 
 **Python Version:** 3.9 or greater. [Download and install Python](https://www.python.org/downloads/)
 
+The use of a virtual environment can avoid issues with package dependencies:
+
+```sh
+python -m venv ./venv-name
+source venv-name/bin/activate
+```
+
 **Modules:** 
 
 - drs*
@@ -44,6 +51,9 @@
 pip install git+https://github.com/dgdguk/drs.git#egg=drs
 ```
 
+To install other modules:
+pip install -r requirements.txt
+
 ## How to Compare Methods
 
 1. Download an XML file from the Paparazzi project containing message periods. By default, we use [`default_rotorcraft.xml`](https://github.com/paparazzi/paparazzi/blob/master/conf/telemetry/default_rotorcraft.xml), already provided in the repository (hence, the download step can be skipped). The file must then be put in the root folder of the project (same path as `probabilityFromXml.py`).
@@ -56,7 +66,7 @@ python probabilityFromXml.py
 
 This will create a file containing the necessary information (prime factor distribution) for generating task periods. The information will be stored in the file `default_rotorcraft_xmlMatrix.csv` (created in the root folder), which will be used in the next step.
 
-3. Check the parameters and execute `offstAssignmentAnalysis.py` . Its parameters are described further in this document. To execute it, in the root folder of the project, run:
+3. Check the parameters and execute `offsetAssignmentAnalysis.py` . Its parameters are described further in this document. To execute it, in the root folder of the project, run:
 
 ```sh
 python offstAssignmentAnalysis.py
@@ -73,7 +83,7 @@ For experiments using the same prime factor distribution to generate random task
 - *input_xmlFileName*: Name of the file from which prime factors will be extracted.
 - *grmax*: Granularity of the prime factor distribution. Chances of a certain factor appearing will be rounded to the nearest rational number having the granularity as the denominator.
 
-#### `offstAssignmentAnalysis.py`
+#### `offsetAssignmentAnalysis.py`
 
 - *factorMatrixFile*: Name of the CSV file containing the matrix of period factors for task generation. Standard value: *default_rotorcraft_xmlMatrix.csv*
 - *outputFolderRoot*:Root to be used when generating folders containing the results. Standard value: *res*
@@ -87,7 +97,7 @@ For experiments using the same prime factor distribution to generate random task
 
 ### Experiments in the published article
 
-- Using the default XML file, `offstAssignmentAnalysis.py` is set with default values. Methods analysed (boolean variables set to *True*) are: `heur_new`, `heur_goossensCoupled`, `heur_can` and `heur_paparazzi` (the other methods are set to *False*). *numberSets* is set to 1000.
+- Using the default XML file, `offsetAssignmentAnalysis.py` is set with default values. Methods analysed (boolean variables set to *True*) are: `heur_new`, `heur_goossensCoupled`, `heur_can` and `heur_paparazzi` (the other methods are set to *False*). *numberSets* is set to 1000.
 Data in Table 1 was obtained from the `log.txt` files created after running experiments 1000x8t_U70 and 1000x16t_U70.
 Experiments in figures 6 to 9 are made according to the following table:
 
@@ -120,7 +130,7 @@ Results will be put in the folder `paparazziAnalysis`. Results are written in a 
 
 #### `case_offsetAssignmentAnalysis.py`
 
-Similar to `offstAssignmentAnalysis.py`, without those relative to generating task sets, and adding:
+Similar to `offsetAssignmentAnalysis.py`, without those relative to generating task sets, and adding:
 
 - *input_xmlFileName*: XML file containing message periods to be analysed.
 
