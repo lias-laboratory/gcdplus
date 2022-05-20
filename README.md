@@ -52,7 +52,10 @@ pip install git+https://github.com/dgdguk/drs.git#egg=drs
 ```
 
 To install other modules:
+
+```sh
 pip install -r requirements.txt
+```
 
 ## How to Compare Methods
 
