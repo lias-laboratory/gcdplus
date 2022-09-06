@@ -1,7 +1,5 @@
 # Toolbox for Comparing Methods for Scheduling Offset-Free Systems
 
-[Link to public repository on GitHub](https://github.com/lias-laboratory/gcdplus)
-
 **Authors:** Yuri Hérouard, Matheus Ladeira
 
 **Advisor:** Emmanuel Grolleau
