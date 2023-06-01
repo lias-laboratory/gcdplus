@@ -143,5 +143,5 @@ Figures 13 and 14 cannot be reproduced using this artefact.
 
 ## Software license agreement
 
-* Details the license agreement of rt-approx-fpps: [LICENSE](LICENSE)
+* Details the license agreement of gcdplus: [LICENSE](LICENSE)
 
