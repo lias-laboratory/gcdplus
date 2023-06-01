@@ -140,3 +140,8 @@ Similar to `offsetAssignmentAnalysis.py`, without those relative to generating t
 For generating Figure 12, we use `paparazzi_case3_tasks.xml`, provided in the root folder of the project. Other parameters are the same as in the other experiments.
 
 Figures 13 and 14 cannot be reproduced using this artefact.
+
+## Software license agreement
+
+* Details the license agreement of rt-approx-fpps: [LICENSE](LICENSE)
+
